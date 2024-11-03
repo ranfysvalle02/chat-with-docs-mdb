@@ -204,7 +204,16 @@ button:hover {
     white-space: pre-wrap;
     font-size: 0.9rem;
 }
+code {
+    padding: .2em .4em;
+    margin: 0;
+    font-size: 85%;
+    font-weight: bold;
+    border-radius: 6px;
+    white-space: pre-wrap;  /* New line and white space will be preserved */
+}
 
+  
 #chatForm {
     display: flex;
     align-items: center;

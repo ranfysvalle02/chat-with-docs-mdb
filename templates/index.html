@@ -53,6 +53,7 @@
                     <select id="collectionSelect-3"></select>
                     <button id="loadButton">load</button>
                     <hr />
+                    <code id="summarized-explore"></code>
                     <table id="exploreTable" class="display">
                         <thead>
                             <tr>
@@ -114,7 +115,7 @@
             <div id="Chat" class="tab">
                 <!-- Chat options -->
                 <section id="chatSection" class="section">
-                    <h2>Chat About with your Collection</h2>
+                    <h2>Chat with your Collection</h2>
                     <span>Collection:</span><select id="collectionSelect-2"></select>
                     <p class="info">Your conversation stays on your device, powered by local AI.</p>
                     <div id="chatHistory" class="content-box"></div>
@@ -417,8 +418,9 @@
                 url: '/explore?collection=' + selectedCollection,
                 type: 'GET',
                 success: function(response) {
-                    const data = response;
-
+                    const data = response.documents;
+                    console.log('response',response)
+                    $("#summarized-explore").text(response.summary);
                     // If the table is already initialized, destroy it before re-initializing
                     if (exploreTableInitialized) {
                         exploreTable.clear().destroy();

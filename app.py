@@ -12,6 +12,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_mongodb.vectorstores import MongoDBAtlasVectorSearch
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import LLMChainExtractor
+import concurrent.futures
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', os.urandom(24))  # Use environment variable for secret key if available
@@ -27,6 +28,21 @@ db = client[DATABASE_NAME]
 embeddings = OllamaEmbeddings(
     model="nomic-embed-text",
 )
+
+
+# Define function to summarize each chunk
+def summarize(chunk):
+    full_prompt = f"<SYS>You are a helpful AI assistant that summarizes context. ALWAYS RESPOND IN MARKDOWN FORMAT, LIST STYLE. CLEVER QUESTIONS THAT CAN BE ANSWERED FROM THE CONTEXT ONLY PLEASE!</SYS>\n [context to summarize]{str(chunk)}[/context to summarize] HUMAN: SUMMARIZE THIS CONTEXT into 120 words. Include some semantically relevant questions to the context as a curious AI. GO! \nAI:"
+    url = 'http://localhost:11434/v1/completions'
+    headers = {'Content-Type': 'application/json'}
+    data = {'prompt': full_prompt, 'model': 'llama3.2:3b', 'max_tokens': 5000}
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        response.raise_for_status()
+        return response.json()['choices'][0]['text']
+    except requests.RequestException as e:
+        return f"Error: {e}"
+
 
 def get_collection_names():
     """Retrieve the names of all collections in the database."""
@@ -159,7 +175,25 @@ def explore():
         },
         {"$project": {"_id": 0, "embedding": 0}}
     ], allowDiskUse=True))
-    return jsonify(documents)
+    documents_summary = list(collection.aggregate([
+        {
+            '$group': {
+                '_id': '$source', 
+                'texts': {
+                    '$push': '$text'
+                }
+            }
+        }, {
+            '$project': {
+                'texts': {
+                    '$slice': [
+                        '$texts', 5
+                    ]
+                }
+            }
+        }
+    ], allowDiskUse=True))
+    return jsonify({'documents': documents, 'summary': summarize(str(documents_summary))})
 
 @app.route('/chat', methods=['POST'])
 def chat():
