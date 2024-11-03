@@ -46,7 +46,7 @@ Build Collections of notes that you can chat with, all powered by MongoDB Atlas 
 3. **Install Dependencies**
 
    ```
-   pip install -r requirements.txt
+   pip3 install -r requirements.txt
    ```
 
 4. **Set Up and Run Ollama Llama 3.2 Model**
