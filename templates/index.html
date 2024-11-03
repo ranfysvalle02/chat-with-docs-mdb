@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local AI Chat powered by MongoDB</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=New+Amsterdam&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.1.8/css/dataTables.jqueryui.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
+    </script>
+</head>
+<body>
+    <div id="overlay" >
+        <div id="spinner">
+            <img src="https://media.licdn.com/dms/image/C4E12AQGYxPO3xABkgg/article-cover_image-shrink_600_2000/0/1620710857655?e=2147483647&v=beta&t=6lmiZQdEbWld3w2WKi8P8fuEssAZBePpkWAo4ITTrbo" style="max-width: 300px; "/>
+        </div>
+    </div>
+    <header>
+        <h1 class="new-amsterdam-regular">Local AI Chat with Notes</h1>
+        <p class="tagline">Privacy-focused, entirely local conversation with your documents.</p>
+    </header>
+    <div>
+        <p>MongoDB local Atlas: <span id="database_status"></span></p>
+        <button id="clearSessionButton">Clear Session</button>     
+        <button id="toggleSessionButton">Show Session</button>
+
+        <hr />
+        <div>
+            <code id="sessionData"></code>
+
+        </div>
+    </div>
+    <main>
+        <div>
+            <div id="tabs">
+                <button class="tab-header" onclick="changeTab('Upload')">Upload</button>
+                <button class="tab-header" onclick="changeTab('Chat')">Chat</button>
+                <button class="tab-header" onclick="changeTab('Explore')">Explore</button>
+
+            </div>
+            <div id="Explore" class="tab">
+                <section class="section">
+                    <h2>Explore Collection [by Chunks]</h2>
+                    <p class="info">Select a collection to explore.</p><hr />
+                    <span style="margin-right: 10px; font-weight: bold;">Select Collection:</span>
+                    <select id="collectionSelect-3"></select>
+                    <button id="loadButton">load</button>
+                    <hr />
+                    <table id="exploreTable" class="display">
+                        <thead>
+                            <tr>
+                                <th>Source</th>
+                                <th>Text</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated here dynamically -->
+                        </tbody>
+                    </table>
+                    
+                </section>
+            </div>
+            
+            <div id="Upload" class="tab">
+                <!-- Collection creation, selection, and deletion -->
+                <section id="mongoDBSection" class="section">
+                    <!-- Document upload and review -->
+                    <section id="upload">
+                        <h2>Upload Your Document</h2>
+                        <p class="info">Files are processed locally and never leave your device.</p>
+                        <div id="dropZone" class="drop-zone">
+                            <p>Drag and drop your file here, or</p>
+                            <form id="uploadForm">
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="fileInput" name="file">
+                                    <label for="fileInput" id="fileLabel">Choose a file</label>
+                                </div>
+                            </form>
+                        </div>
+                    </section>
+                    <button id="resetButton" style="display: none;background-color: white; border: 1em solid green; color: green;">Reset</button>
+                    <!-- Document review -->
+                    <section id="review">
+                        <h2>Review Your Document</h2>
+                        <div id="fileContent" class="content-box"></div>
+                        <hr />
+                        <div class="mongo-controls">
+                            <button id="newCollectionButton">new collection</button>
+                            <hr />
+                            <div id="newCollection" style="display: none;">
+                                <input type="text" id="newCollectionName" placeholder="Enter new collection name">
+                                <button id="createCollectionButton">Create Collection</button>
+                                <button id="resetNewCollectionButton">Reset</button>
+                            </div>
+                            <hr />
+                            <span style="margin-right: 10px; font-weight: bold;">Select Collection:</span>
+                            <select id="collectionSelect-1"></select>
+                            <button id="deleteCollectionButton">💀</button>
+                            
+                        </div>
+                        <button id="ingestButton">Ingest</button>
+                    </section>
+                </section>
+            </div>
+            
+            
+            <div id="Chat" class="tab">
+                <!-- Chat options -->
+                <section id="chatSection" class="section">
+                    <h2>Chat About with your Collection</h2>
+                    <span>Collection:</span><select id="collectionSelect-2"></select>
+                    <p class="info">Your conversation stays on your device, powered by local AI.</p>
+                    <div id="chatHistory" class="content-box"></div>
+                    <!-- Additional UI elements for chat feature -->
+                    <div class="chat-controls">
+                        <input type="text" id="userInputField" placeholder="Enter your message">
+                        <button id="sendButton">Send</button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+
+    <script>
+        var filename = '';
+    
+        function changeTab(tabId) {
+            const tabs = document.getElementsByClassName('tab');
+            const tabHeaders = document.getElementsByClassName('tab-header');
+    
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].style.display = 'none';
+                tabHeaders[i].classList.remove('active'); // Remove active class from all headers
+            }
+    
+            // Display clicked tab and make its header active
+            document.getElementById(tabId).style.display = 'block';
+            document.querySelector(`[onclick="changeTab('${tabId}')"]`).classList.add('active');
+            // Fetch collections on change to 'Collection' tab
+            if(tabId === 'Upload') {
+                setTimeout(fetchCollections, 100);   // 100 is delay in milliseconds
+            }
+            else if(tabId === 'Chat') {
+                setTimeout(fetchCollections, 100);   // 100 is delay in milliseconds
+            }
+            else if(tabId === 'Explore') {
+                setTimeout(fetchCollections, 100);   // 100 is delay in milliseconds
+                
+                
+            }
+        }
+    
+        function fetchCollections() {
+            fetch('/api/collections')
+                .then(response => {
+                    if (!response.ok) {
+                        return Promise.reject(response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const collectionSelect1 = document.getElementById('collectionSelect-1');
+                    collectionSelect1.innerHTML = '';
+                    data.collections.forEach(collection => {
+                        const option = document.createElement('option');
+                        option.value = collection;
+                        option.textContent = collection;
+                        collectionSelect1.appendChild(option);
+                    });
+                    const collectionSelect2 = document.getElementById('collectionSelect-2');
+                    collectionSelect2.innerHTML = '';
+                    data.collections.forEach(collection => {
+                        const option = document.createElement('option');
+                        option.value = collection;
+                        option.textContent = collection;
+                        collectionSelect2.appendChild(option);
+                    });
+                    const collectionSelect3 = document.getElementById('collectionSelect-3');
+                    collectionSelect3.innerHTML = '';
+                    data.collections.forEach(collection => {
+                        const option = document.createElement('option');
+                        option.value = collection;
+                        option.textContent = collection;
+                        collectionSelect3.appendChild(option);
+                    });
+                })
+                .catch(error => console.log(`Fetch Error: ${error}`));
+        }
+    
+        document.addEventListener("DOMContentLoaded", function () {
+            // Fetch initial data    
+            document.getElementById('createCollectionButton').addEventListener('click', function () {
+                $('#overlay').css('visibility', 'visible');
+                const newCollectionName = document.getElementById('newCollectionName').value;
+                fetch('/create_collection', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name: newCollectionName }),
+                }).then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                        } else {
+                            alert('Collection created successfully!');
+                            $("#newCollectionName").val('');
+                            fetchCollections(); // Reload the collection list
+                        }
+                        $('#overlay').css('visibility', 'hidden');
+                    });
+            });
+    
+            document.getElementById('deleteCollectionButton').addEventListener('click', function () {
+                const collectionName = document.getElementById('collectionSelect-1').value;
+                fetch('/delete_collection', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name: collectionName }),
+                }).then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                        } else {
+                            alert('Collection deleted successfully!');
+                            fetchCollections(); // Reload the collection list
+                        }
+                    });
+            });
+    
+            fetch('/status').then((response) => {
+                if (response.status === 200) {
+                    return response.json();
+                } else {
+                    throw new Error(response.statusText);
+                }
+            }).then((data) => {
+                document.querySelector('#database_status').innerText = data.database_status;
+            }).catch((error) => {
+                console.error('Error:', error);
+                document.querySelector('#database_status').innerText = 'Unhealthy';
+            });
+        });
+        function changeSubTab(subTabId) {
+            const subTabs = document.getElementsByClassName('sub-tab');
+            const subTabHeaders = document.getElementsByClassName('sub-tab-header');
+
+            for (let i = 0; i < subTabs.length; i++) {
+                subTabs[i].style.display = 'none';
+                subTabHeaders[i].classList.remove('active'); // Remove active class from all headers
+            }
+
+            // Display clicked sub-tab and make its header active
+            document.getElementById(subTabId).style.display = 'block';
+            document.querySelector(`[onclick="changeSubTab('${subTabId}')"]`).classList.add('active');
+        }
+
+    </script>
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            var file = e.target.files[0];
+            if (!file) {
+                return;
+            }
+            filename = file.name; // Store filename
+
+            if (file.type.startsWith('application/pdf')) {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    const typedarray = new Uint8Array(this.result);
+                    pdfjsLib.getDocument(typedarray).promise.then((pdfDoc) => {
+                        pdfDoc.getPage(1).then((page) => {
+                            page.getTextContent().then((textContent) => {
+                                const fileContent = textContent.items.map(item => item.str).join(' ');
+                                console.log('File content:', fileContent);
+                                document.getElementById('fileContent').textContent = fileContent;
+
+                                // Hide the 'Upload Your Document' section
+                                document.getElementById('upload').style.display = 'none';
+                                // Show the reset button
+                                document.getElementById('resetButton').style.display = 'block';
+                            });
+                        });
+                    }).catch(error => {
+                        console.error("Error getting document:", error);
+                    });
+                };
+                reader.readAsArrayBuffer(file); // Read as ArrayBuffer for PDF processing
+            } else {
+                // Handle non-PDF files as before
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var contents = e.target.result;
+                    document.getElementById('fileContent').textContent = contents;
+                    document.getElementById('upload').style.display = 'none';
+                    document.getElementById('resetButton').style.display = 'block';
+                };
+                reader.readAsText(file);
+            }
+        }, false);
+    
+        // Add event listener to reset button to show the upload section and hide itself
+        document.getElementById('resetButton').addEventListener('click', function(e) {
+            document.getElementById('upload').style.display = 'block';
+            document.getElementById('fileContent').textContent = '';
+            this.style.display = 'none';
+        });
+        document.getElementById('newCollectionButton').addEventListener('click', function() {
+            var x = document.getElementById("newCollection");
+            if (x.style.display === "none") {
+                x.style.display = "block";
+            } else {
+                x.style.display = "none";
+            }
+        });
+        
+        document.getElementById('resetNewCollectionButton').addEventListener('click', function() {
+            document.getElementById('newCollectionName').value = '';
+            var x = document.getElementById("newCollection");
+            if (x.style.display === "none") {
+                x.style.display = "block";
+            } else {
+                x.style.display = "none";
+            }
+        });
+
+        document.getElementById('sendButton').addEventListener('click', function () {
+            const userInput = document.getElementById('userInputField').value;
+            $('#overlay').css('visibility', 'visible');
+            fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: userInput, collection: document.getElementById('collectionSelect-2').value }),
+            }).then(response => response.json())
+                .then(data => {
+                    if(data.error) {
+                        alert(data.error);
+                    } else {
+                        document.getElementById('chatHistory').innerHTML += 
+                        `<p>Human: ${userInput}</p><p>AI: ${data.response}</p>`;
+                        document.getElementById('userInputField').value = '';
+                        $('#overlay').css('visibility', 'hidden');
+                    }
+                });
+        });
+        // Add an event listener to handle the button click
+        document.getElementById('clearSessionButton').addEventListener('click', function () {
+            fetch('/clear_all', { 
+                method: 'POST' 
+            }).then(response => response.json())
+            .then(data => {
+                if(data.status == 'success') {
+                    alert(data.message);
+                    // Here, you can also add any additional step like refreshing the page 
+                    window.location.reload();
+                }
+            });
+        });
+        let isSessionVisible = false;  // global variable to hold the state
+
+        document.getElementById('toggleSessionButton').addEventListener('click', function () {
+            if (!isSessionVisible) {
+                fetch('/show_session', { 
+                    method: 'GET' 
+                }).then(response => response.json())
+                .then(data => {
+                    document.getElementById('sessionData').innerHTML = JSON.stringify(data, null, 2);
+                    document.getElementById('toggleSessionButton').innerText = 'Hide Session';
+                    isSessionVisible = true;
+                });
+            } else {
+                document.getElementById('sessionData').innerHTML = '';
+                document.getElementById('toggleSessionButton').innerText = 'Show Session';
+                isSessionVisible = false;
+            }
+        });
+
+        let exploreTableInitialized = false;
+        let exploreTable;
+
+        document.getElementById('loadButton').addEventListener('click', function () {
+            const selectedCollection = $("#collectionSelect-3").val();
+            $('#overlay').css('visibility', 'visible');
+            $.ajax({
+                url: '/explore?collection=' + selectedCollection,
+                type: 'GET',
+                success: function(response) {
+                    const data = response;
+
+                    // If the table is already initialized, destroy it before re-initializing
+                    if (exploreTableInitialized) {
+                        exploreTable.clear().destroy();
+                        $('#exploreTable tbody').empty(); // Clear existing data
+                    }
+
+                    // Initialize DataTable
+                    exploreTable = $('#exploreTable').DataTable({
+                        data: data,
+                        columns: [
+                            { data: "source", searchable: true },
+                            { data: "text", searchable: true },
+                        ],
+                        // Optional: Enable features explicitly
+                        searching: true,
+                        paging: true,
+                        ordering: true,
+                    });
+
+                    exploreTableInitialized = true;
+                    $('#overlay').css('visibility', 'hidden');
+                },
+                error: function(error){
+                    console.log("Error: ", error);
+                }
+            });
+        });
+
+
+        document.getElementById('ingestButton').addEventListener('click', function () {
+            const fileContent = document.getElementById('fileContent').textContent;
+            const collectionName = document.getElementById('collectionSelect-1').value;
+            
+            const data = {
+                text: fileContent,
+                collection_name: collectionName,  
+                source: filename
+            };
+            $('#overlay').css('visibility', 'visible');
+            fetch('/ingest', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            }).then(response => response.json())
+                .then(data => {
+                    if(data.error) {
+                        alert(data.error);
+                    } else {
+                        alert('Data ingested successfully');
+                        window.location.reload();
+                    }
+                });
+        });
+
+    </script>
+    <script>
+
+    </script>
+    
+</body>
+</html>

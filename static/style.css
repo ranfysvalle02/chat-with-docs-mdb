@@ -1,0 +1,365 @@
+.new-amsterdam-regular {
+    font-family: "New Amsterdam", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 4em;
+    letter-spacing: 3px;
+}
+@keyframes fadeIn {
+    from {opacity: 0}
+    to {opacity: 1}
+}
+#overlay {
+    visibility: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 2;
+    cursor: pointer;
+  }
+  
+.tab, .sub-tab {
+    display: none;
+    animation: fadeIn 0.5s;
+}
+.tab-header, .sub-tab-header {
+    cursor: pointer;
+    transition: background-color 0.3s ease, border 0.3s ease;
+    padding: 15px; /* Increase padding */
+}
+
+.tab-header:hover, .sub-tab-header:hover {
+    background-color: #b3d4b3; /* Light green on hover */
+}
+
+.tab-header.active, .sub-tab-header.active {
+    background-color: #97c897; /* Lighter shade of green. */
+    color: black;
+    font-weight: 500; /* Slightly bold font */
+    border: 3px solid #107b42; /* Dark green border */
+}
+
+#deleteCollectionButton{
+    background-color: red;
+    font-size: 1.1em;
+}
+
+#clearSessionButton{
+    background-color: red;
+}
+
+:root {
+    --primary-color: #13aa52; /* MongoDB Green */
+    --secondary-color: #21333d; /* Dark hue */
+    --background-color: #f9f9f9;
+    --box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    --border-radius: 8px;
+    --transition: all 0.3s ease;
+    --header-background: url('https://webassets.mongodb.com/_com_assets/cms/digital-ad-header-ay3wwuw1wi.jpg'); /* Background image */
+}
+
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: var(--background-color);
+}
+
+header {
+    background-color: rgba(0,0,0,0.6);
+    color: white;
+    text-align: center;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    background: var(--header-background) no-repeat center/cover; /* Adjust background */
+}
+
+header {
+    position: relative;
+    filter: brightness(0.9);
+}
+
+h1 {
+    margin-bottom: 0.5rem;
+    color:white;
+}
+
+.tagline {
+    font-style: italic;
+    font-weight: bold;
+    color: white;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+section {
+    background-color: white;
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--box-shadow);
+}
+
+h2 {
+    color: var(--secondary-color);
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.info {
+    background-color: #e8f4f8;
+    border-left: 4px solid var(--primary-color);
+    padding: 0.5rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+
+form {
+    margin-bottom: 1rem;
+}
+
+#uploadForm {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.file-input-wrapper {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+.file-input-wrapper input[type=file] {
+    font-size: 100px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+}
+
+.file-input-wrapper label {
+    background-color: #f0f0f0;
+    color: #333;
+    padding: 10px 20px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    display: inline-block;
+    transition: var(--transition);
+}
+
+.file-input-wrapper:hover label {
+    background-color: #e0e0e0;
+}
+
+input[type="text"] {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+}
+
+button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+}
+
+button:hover {
+    background-color: #107b42; /* Slightly darker shade for hover */
+}
+
+.content-box {
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+    background-color: #fff;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#fileContent, #chatHistory {
+    font-family: 'Courier New', monospace;
+    white-space: pre-wrap;
+    font-size: 0.9rem;
+}
+
+#chatForm {
+    display: flex;
+    align-items: center;
+    margin-top: 20px;
+}
+
+#userInput {
+    flex: 1;
+    padding: 10px;
+    margin-right: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    height: 40px;
+}
+#spinner {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#sendButton {
+    padding: 0 20px;
+    border: none;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    box-sizing: border-box;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#sendButton:hover {
+    background-color: #107b42;
+}
+
+footer {
+    text-align: center;
+    margin-top: 2rem;
+    color: #777;
+    font-size: 0.9rem;
+}
+
+
+
+
+.status {
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.status.success {
+    color: #2ecc71;
+}
+
+.status.error {
+    color: #e74c3c;
+}
+
+.chat-controls {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+}
+
+.message {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeIn 0.5s ease forwards;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.drop-zone {
+    border: 2px dashed var(--primary-color);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    text-align: center;
+    transition: background-color 0.3s ease;
+}
+
+.drop-zone.dragover {
+    background-color: rgba(19, 170, 82, 0.1);  /* Lighter green background on dragover */
+}
+
+.drop-zone p {
+    margin-bottom: 10px;
+}
+
+.message.you-message {
+    background-color: #d1e7f8;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.message.ai-message {
+    background-color: #f0f0f0;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.mongo-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    background-color: #e8f4f8;
+    padding: 10px;
+    border-radius: var(--border-radius);
+}
+
+.mongo-controls input[type="text"] {
+    width: auto;
+    flex-grow: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+}
+
+.mongo-controls label {
+    margin-right: 5px;
+}
+
+.mongo-controls button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+}
+
+.mongo-controls button:hover {
+    background-color: #107b42;
+}
+

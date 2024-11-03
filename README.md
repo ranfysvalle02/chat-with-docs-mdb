@@ -57,6 +57,22 @@ Build Collections of notes that you can chat with, all powered by MongoDB Atlas 
    ollama run llama3.2
    ```
 
+## Setting Up a Local Atlas Environment
+
+1. **Pull the Docker Image:**
+
+   * **Latest Version:**
+     ```bash
+     docker pull mongodb/mongodb-atlas-local
+     ```
+
+2. **Run the Database:**
+
+   ```bash
+   docker run -p 27017:27017 mongodb/mongodb-atlas-local
+   ```
+   This command runs the Docker image, exposing port 27017 on your machine for connecting to the database.
+
 ## Running the Application
 
 1. **Start the Flask Application**
