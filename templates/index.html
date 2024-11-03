@@ -279,17 +279,37 @@
                 reader.onload = function() {
                     const typedarray = new Uint8Array(this.result);
                     pdfjsLib.getDocument(typedarray).promise.then((pdfDoc) => {
-                        pdfDoc.getPage(1).then((page) => {
-                            page.getTextContent().then((textContent) => {
-                                const fileContent = textContent.items.map(item => item.str).join(' ');
-                                console.log('File content:', fileContent);
-                                document.getElementById('fileContent').textContent = fileContent;
+                        const numPages = pdfDoc.numPages; // Get the number of pages
+                        let allText = []; // Array to hold text content from each page
 
-                                // Hide the 'Upload Your Document' section
-                                document.getElementById('upload').style.display = 'none';
-                                // Show the reset button
-                                document.getElementById('resetButton').style.display = 'block';
+                        // Function to get text from a specific page
+                        const getPageText = (pageNum) => {
+                            return pdfDoc.getPage(pageNum).then((page) => {
+                                return page.getTextContent().then((textContent) => {
+                                    const pageText = textContent.items.map(item => item.str).join(' ');
+                                    allText.push(pageText); // Add page text to the array
+                                });
                             });
+                        };
+
+                        // Create an array of promises for each page
+                        const pagePromises = [];
+                        for (let i = 1; i <= numPages; i++) {
+                            pagePromises.push(getPageText(i));
+                        }
+
+                        // Wait for all pages to be processed
+                        Promise.all(pagePromises).then(() => {
+                            const fileContent = allText.join('\n'); // Join all pages' text with new lines
+                            console.log('File content:', fileContent);
+                            document.getElementById('fileContent').textContent = fileContent;
+
+                            // Hide the 'Upload Your Document' section
+                            document.getElementById('upload').style.display = 'none';
+                            // Show the reset button
+                            document.getElementById('resetButton').style.display = 'block';
+                        }).catch(error => {
+                            console.error("Error processing pages:", error);
                         });
                     }).catch(error => {
                         console.error("Error getting document:", error);
