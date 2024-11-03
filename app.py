@@ -78,7 +78,7 @@ def ingest():
     
     # Initialize the RecursiveCharacterTextSplitter
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,  # Maximum size of each chunk
+        chunk_size=2000,  # Maximum size of each chunk
         chunk_overlap=20,  # Number of overlapping characters between chunks
         length_function=len,  # Function to determine the length of each chunk
         separators=["\n\n", "\n", " ", ""]  # Characters to use for splitting
