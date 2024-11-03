@@ -30,14 +30,14 @@ Build Collections of notes that you can chat with, all powered by MongoDB Atlas 
 1. **Clone the Repository**
 
    ```
-   git clone https://github.com/yourusername/chat-with-notes-mdb.git
-   cd chat-with-notes
+   git clone git@github.com:ranfysvalle02/chat-with-docs-mdb.git
+   cd chat-with-docs-mdb
    ```
 
 2. **Create and Activate Virtual Environment**
 
    ```
-   python3 -m venv cchat-with-notes-mdb-env
+   python3 -m venv chat-with-notes-mdb-env
    source chat-with-notes-mdb-env/bin/activate  # On Windows, use `chat-with-notes-mdb-env\Scripts\activate`
    ```
 
@@ -78,7 +78,7 @@ Build Collections of notes that you can chat with, all powered by MongoDB Atlas 
 1. **Start the Flask Application**
 
    ```
-   python app.py
+   python3 app.py
    ```
 
 2. **Access the Application**
