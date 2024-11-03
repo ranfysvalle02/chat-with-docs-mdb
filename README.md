@@ -1,5 +1,7 @@
 # Chat-with-Collection-of-Notes | Powered by MongoDB
 
+![](local-ai-chat.mp4)
+
 _Inspired by https://github.com/fivestarspicy/chat-with-notes_
 
 
