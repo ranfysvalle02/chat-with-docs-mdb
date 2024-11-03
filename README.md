@@ -87,6 +87,14 @@ Build Collections of notes that you can chat with, all powered by MongoDB Atlas 
 
    Open your web browser and navigate to `http://127.0.0.1:5000/` or `http://<your-local-ip>:5000/` to access the application from another device on the same network.
 
+**PROMPT**
+
+![](prompt.png)
+
+**CHAT**
+
+![](chat.png)
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
