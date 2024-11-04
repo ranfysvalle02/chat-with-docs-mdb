@@ -678,7 +678,8 @@
             .then(response => response.json())
             .then(data => {
                 alert('Chunk updated successfully');
-                document.getElementById("myModal").style.display = "none";
+                // refresh page
+                window.location.reload();
             });
         });
 
@@ -703,7 +704,8 @@
             .then(response => response.json())
             .then(data => {
                 alert('Chunk deleted successfully');
-                document.getElementById("myModal").style.display = "none";
+                // refresh page
+                window.location.reload();
             });
         });
 
