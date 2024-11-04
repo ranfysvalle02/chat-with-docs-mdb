@@ -25,7 +25,7 @@ Build Collections of notes that you can chat with, all powered by MongoDB Atlas 
 - Python 3.x
 - pip (Python package installer)
 - Git
-- Ollama with Llama 3.1 (8B) model running locally
+- Ollama with Llama 3.2 model running locally
 
 ## Installation
 
