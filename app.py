@@ -64,7 +64,8 @@ def get_collection_names():
     collections = list(db.list_collection_names())
     app.logger.debug(f"Collections: {collections}")
     return collections
-
+    
+# https://www.llama.com/docs/model-cards-and-prompt-formats/meta-code-llama/
 def generate_response(prompt, conversation_history):
     """Generate an AI response based on the prompt, conversation history, and file content."""
     formatted_history = "\n".join(conversation_history)
