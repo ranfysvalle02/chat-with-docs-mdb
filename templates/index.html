@@ -495,18 +495,33 @@
                         // Encapsulate the expandable-code in a separate div
                         const chunkDataElement = document.createElement("div");
                         chunkDataElement.setAttribute("id", "chunk-data");
-                        chunkDataElement.style.display = "none";
-                        chunkDataElement.innerHTML = `<code class='expandable-code'>${JSON.stringify(data.chunks, null, 2)}</code>`;
+                        if (data.chunks) {
+                            chunkDataElement.style.display = "none";
+                            chunkDataElement.innerHTML = `<code class='expandable-code'>${JSON.stringify(data.chunks, null, 2)}</code>`;
 
-                        // Append the elements to the chat history
-                        document.getElementById('chatHistory').innerHTML +=
-                            `<p>Human: ${userInput}</p>
-                            <p>AI: ${data.response}<hr />Chunks Used: ${data.chunks.length}</p>`;
-                        document.getElementById('chatHistory').appendChild(chunkButton);
-                        document.getElementById('chatHistory').appendChild(chunkDataElement);
+                            // Append the elements to the chat history
+                            document.getElementById('chatHistory').innerHTML +=
+                                `<p>Human: ${userInput}</p>
+                                <p>AI: ${data.response}<hr />Chunks Used: ${data.chunks.length}</p>`;
+                            document.getElementById('chatHistory').appendChild(chunkButton);
+                            document.getElementById('chatHistory').appendChild(chunkDataElement);
 
-                        document.getElementById('userInputField').value = '';
-                        $('#overlay').css('visibility', 'hidden');
+                            document.getElementById('userInputField').value = '';
+                            $('#overlay').css('visibility', 'hidden');
+                        }else{
+                            chunkDataElement.style.display = "none";
+                            chunkDataElement.innerHTML = `<code class='expandable-code'>${JSON.stringify([], null, 2)}</code>`;
+
+                            // Append the elements to the chat history
+                            document.getElementById('chatHistory').innerHTML +=
+                                `<p>Human: ${userInput}</p>
+                                <p>AI: ${data.response}<hr />Chunks Used: n/a</p>`;
+                            document.getElementById('chatHistory').appendChild(chunkButton);
+                            document.getElementById('chatHistory').appendChild(chunkDataElement);
+
+                            document.getElementById('userInputField').value = '';
+                            $('#overlay').css('visibility', 'hidden');
+                        }
                     }
                 });
         });

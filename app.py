@@ -50,8 +50,19 @@ def get_collection_names():
 def generate_response(prompt, conversation_history):
     """Generate an AI response based on the prompt, conversation history, and file content."""
     formatted_history = "\n".join(conversation_history)
-    full_prompt = f"\nConversation history:\n{formatted_history}\n\nHuman: {prompt}\nAI:"
-    print(full_prompt)
+    full_prompt = f"""
+[INST]
+<<SYS>>
+You are a helpful AI assistant.
+<</SYS>>
+
+[chat history]
+{formatted_history}
+[/chat history]
+
+{prompt}
+"""
+    print("PROMPT: "+full_prompt)
     url = 'http://localhost:11434/v1/completions'
     headers = {'Content-Type': 'application/json'}
     data = {'prompt': full_prompt, 'model': 'llama3.2:3b', 'max_tokens': 5000}
@@ -225,7 +236,7 @@ def chat():
     user_input = data.get('message', '')
     selected_collection = data.get('collection', '')
     chunk_count = int(str(data.get('chunk_count', CHUNKS_PER_QUERY)))
-    print("CHUNK_COUNT"+str(chunk_count))
+    print("CHUNK_COUNT: "+str(chunk_count))
     if selected_collection not in db.list_collection_names():
         conversation_history = session.get('conversation_history', [])
         conversation_history.append(f"Human: {user_input}")
@@ -259,18 +270,12 @@ def chat():
         docs = vectorStore.similarity_search(query, k=chunk_count)
         print(str(docs))
         print("---------------\n")
-        ai_response = generate_response(f"""
-                                        
-    [system]
-You are a knowledgeable assistant specialized in providing concise and accurate information. 
-Your responses should be based solely on the context provided and should not include any personal opinions or knowledge outside of the given context. 
-    [/system]
-                                        
+        ai_response = generate_response(f"""                                    
     [context]
     {str(docs)}
     [/context]
 
-    USE THE [context] TO RESPOND TO THE `{user_input}`.
+    USE THE [context] TO RESPOND TO [user_input=`{user_input}`]
 
     [RESPONSE FORMAT]
         - RESPOND IN PLAINTEXT (EMOJIS ARE ALLOWED). IMPORTANT!
