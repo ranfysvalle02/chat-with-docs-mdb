@@ -194,6 +194,28 @@ def explore():
     ], allowDiskUse=True))
     return jsonify({'documents': documents, 'summary': summarize(str(documents_summary))})
 
+@app.route('/update_chunk', methods=['POST'])
+def update_chunk():
+    action = request.json.get('action')
+    collection_name = request.json.get('collection')
+    source = request.json.get('source')
+    og_text = request.json.get('og_text')
+    new_text = request.json.get('new_text')
+
+    if collection_name not in db.list_collection_names():
+        return jsonify({'error': 'Collection does not exist'})
+
+    collection = db[collection_name]
+
+    if action == 'save':
+        collection.update_many({'source': source, 'text': og_text}, {'$set': {'text': new_text}})
+
+    elif action == 'delete':
+        collection.delete_many({'source': source, 'text': og_text})
+
+    return jsonify({'og_text': og_text, 'new_text': new_text})
+
+
 @app.route('/chat', methods=['POST'])
 def chat():
     data = request.json
