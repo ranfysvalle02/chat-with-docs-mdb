@@ -15,8 +15,100 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
     </script>
+    <style>
+        /* The Modal (background) */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            padding-top: 15%; /* Position at the top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.6); /* Overlay effect: translucent background: black w/ partial opacity */
+        } 
+    
+        /* Modal Content */
+        .modal-content {
+            position: relative;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            border-radius: 10px; /* Optionally, round the edges */
+            width: 60%;
+            background-color: #fefefe; /* White background color */
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.18); /* Black shadow to make the modal pop */
+        }
+    
+        /* The Close Button */
+        .close {
+            color: black;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .close:hover,
+        .close:focus {
+            color: red;
+            cursor: pointer;
+        }
+        /* Modal buttons */
+        .modal-button {
+            border: none;
+            padding: 10px 30px;
+            border-radius: var(--border-radius);
+            color: white;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .save-button {
+            background-color: green;
+        }
+        .save-button:hover {
+            background-color: darkgreen;
+        }
+        .delete-button {
+            background-color: red;
+        }
+        .delete-button:hover {
+            background-color: darkred;
+        }
+        .cancel-button {
+            background-color: gray;
+        }
+        .cancel-button:hover {
+            background-color: darkgray;
+        }
+
+    </style>
+    
+        
 </head>
 <body>
+    <!-- The Modal -->
+    <div id="myModal" class="modal">
+        <!-- Modal content -->
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <form id="editForm">
+                <input type="hidden" id="ogTextInput" name="og_text">
+                <label for="source">Source:</label><br>
+                <input type="text" id="sourceInput" name="source" readonly><br>
+                <label for="text">Text:</label><br>
+                <textarea id="textInput" name="text" style="width: 100%;"></textarea><br>
+                <button type="button" class="modal-button save-button">SAVE</button>
+                <button type="button" class="modal-button delete-button">DELETE</button>
+                <button type="button" class="modal-button cancel-button">CANCEL</button>
+            </form>
+        </div>
+    </div>
+
+  
     <div id="overlay" >
         <div id="spinner">
             <img src="https://media.licdn.com/dms/image/C4E12AQGYxPO3xABkgg/article-cover_image-shrink_600_2000/0/1620710857655?e=2147483647&v=beta&t=6lmiZQdEbWld3w2WKi8P8fuEssAZBePpkWAo4ITTrbo" style="max-width: 300px; "/>
@@ -471,11 +563,17 @@
                     }
 
                     // Initialize DataTable
-                    exploreTable = $('#exploreTable').DataTable({
+                    window.exploreTable = $('#exploreTable').DataTable({
                         data: data,
                         columns: [
                             { data: "source", searchable: true },
                             { data: "text", searchable: true },
+                            // Add your button column here
+                            { 
+                                data: null, 
+                                className: "center", 
+                                defaultContent: '<button type="button" class="edit-btn">edit</button>' 
+                            }
                         ],
                         // Optional: Enable features explicitly
                         searching: true,
@@ -492,7 +590,7 @@
             });
         });
 
-
+        
         document.getElementById('ingestButton').addEventListener('click', function () {
             const fileContent = document.getElementById('fileContent').textContent;
             const collectionName = document.getElementById('collectionSelect-1').value;
@@ -523,6 +621,27 @@
         window.addEventListener('DOMContentLoaded', (event) => {
             document.getElementById('chunkSizeInput').addEventListener("change", validateInput);
             document.getElementById('chunkCountInput').addEventListener("change", validateInput);
+            
+        });
+        $('#exploreTable tbody').on('click', 'button.edit-btn', function() {
+            // 'this' refers to the current DOM element (i.e., the clicked button)
+            // We get the row this button is inside with .parents('tr')
+            // We use .data() to get DataTables' stored data for this row
+            var data = window.exploreTable.row($(this).parents('tr')).data();
+            console.log('rowData',data);
+            document.getElementById('ogTextInput').value = data.text;
+
+            document.getElementById('editForm').reset();
+
+            document.getElementById('sourceInput').value = data.source;
+            document.getElementById('textInput').value = data.text;
+
+            var modal = document.getElementById("myModal");
+            modal.style.display = "block";
+
+            document.getElementsByClassName("close")[0].onclick = function() {
+                modal.style.display = "none";
+            }
         });
 
         function validateInput(event) {
@@ -536,6 +655,62 @@
 
 
 
+        // Save button event
+        document.querySelector('.save-button').addEventListener('click', function () {
+            // gather values
+            const source = document.getElementById("sourceInput").value;
+            const text = document.getElementById("textInput").value;
+            const og_text = document.getElementById("ogTextInput").value;  // Add this line
+        
+            fetch('/update_chunk', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'save',
+                    collection: document.getElementById('collectionSelect-3').value,
+                    source: source,
+                    og_text: og_text,  // Pass original text
+                    new_text: text
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Chunk updated successfully');
+                document.getElementById("myModal").style.display = "none";
+            });
+        });
+
+        // Delete button event
+        document.querySelector('.delete-button').addEventListener('click', function () {
+            // gather values
+            const source = document.getElementById("sourceInput").value;
+            const og_text = document.getElementById("ogTextInput").value;  // Add this line
+        
+            fetch('/update_chunk', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'delete',  // action field to determine what needs to be done
+                    collection: document.getElementById('collectionSelect-3').value,
+                    source: source,
+                    og_text: og_text
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Chunk deleted successfully');
+                document.getElementById("myModal").style.display = "none";
+            });
+        });
+
+        // Cancel button event
+        document.querySelector('.cancel-button').addEventListener('click', function () {
+            document.getElementById("myModal").style.display = "none";
+        });
 
     </script>
     
