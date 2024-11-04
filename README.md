@@ -95,6 +95,11 @@ Build Collections of notes that you can chat with, all powered by MongoDB Atlas 
 
 ![](chat.png)
 
+**CHUNK SIZE CONTROL @ INGEST**
+
+![](chunk_ingest_size_control.png)
+
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
