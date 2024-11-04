@@ -103,6 +103,10 @@ Build Collections of notes that you can chat with, all powered by MongoDB Atlas 
 
 ![](chunk_viz.png)
 
+**CHUNK MANAGEMENT**
+
+![](chunk_mgmt.png)
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
