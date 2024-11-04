@@ -28,10 +28,28 @@ embeddings = OllamaEmbeddings(
 
 
 # Define function to summarize each chunk
-def summarize(chunk):
-    full_prompt = f"<SYS>You are a helpful AI assistant that summarizes context. ALWAYS RESPOND IN MARKDOWN FORMAT, LIST STYLE. CLEVER QUESTIONS THAT CAN BE ANSWERED FROM THE CONTEXT ONLY PLEASE!</SYS>\n [context to summarize]{str(chunk)}[/context to summarize] HUMAN: SUMMARIZE THIS CONTEXT into 120 words. Include some semantically relevant questions to the context as a curious AI. GO! \nAI:"
+def summarize(txt):
     url = 'http://localhost:11434/v1/completions'
     headers = {'Content-Type': 'application/json'}
+    full_prompt = f"""
+[INST]
+<<SYS>>
+You are a helpful AI assistant who summarizes context and generates excellent questions.
+<</SYS>>
+
+[context to summarize]
+{str(txt)}
+[/context to summarize]
+
+Summarize the context. Provide the summary, and some helpful questions that can be answered from the context.
+
+[RESPONSE FORMAT]
+- RESPOND IN PLAINTEXT (EMOJIS ARE ALLOWED). IMPORTANT!
+- USE MARKDOWN LIST FORMAT.
+- MAX RESPONSE LENGTH IS 1000 WORDS.
+[/RESPONSE FORMAT]
+[/INST]
+"""
     data = {'prompt': full_prompt, 'model': 'llama3.2:3b', 'max_tokens': 5000}
     try:
         response = requests.post(url, headers=headers, json=data)
@@ -61,6 +79,7 @@ You are a helpful AI assistant.
 [/chat history]
 
 {prompt}
+[/INST]
 """
     print("PROMPT: "+full_prompt)
     url = 'http://localhost:11434/v1/completions'
