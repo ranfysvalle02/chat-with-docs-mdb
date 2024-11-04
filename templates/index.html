@@ -501,8 +501,7 @@
 
                             // Append the elements to the chat history
                             document.getElementById('chatHistory').innerHTML +=
-                                `<p>Human: ${userInput}</p>
-                                <p>AI: ${data.response}<hr />Chunks Used: ${data.chunks.length}</p>`;
+                                `<p>Human: ${userInput}</p><p>AI: ${data.response}<hr />Chunks Used: ${data.chunks.length}</p>`;
                             document.getElementById('chatHistory').appendChild(chunkButton);
                             document.getElementById('chatHistory').appendChild(chunkDataElement);
 
@@ -514,8 +513,7 @@
 
                             // Append the elements to the chat history
                             document.getElementById('chatHistory').innerHTML +=
-                                `<p>Human: ${userInput}</p>
-                                <p>AI: ${data.response}<hr />Chunks Used: n/a</p>`;
+                                `<p>Human: ${userInput}</p><p>AI: ${data.response}<hr />Chunks Used: n/a</p>`;
                             document.getElementById('chatHistory').appendChild(chunkButton);
                             document.getElementById('chatHistory').appendChild(chunkDataElement);
 
