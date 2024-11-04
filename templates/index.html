@@ -558,50 +558,46 @@
 
         let exploreTableInitialized = false;
         let exploreTable;
-
         document.getElementById('loadButton').addEventListener('click', function () {
-            const selectedCollection = $("#collectionSelect-3").val();
-            $('#overlay').css('visibility', 'visible');
-            $.ajax({
-                url: '/explore?collection=' + selectedCollection,
-                type: 'GET',
-                success: function(response) {
+            const selectedCollection = document.getElementById('collectionSelect-3').value;
+            document.getElementById('overlay').style.visibility = 'visible';
+
+            fetch('/explore?collection=' + selectedCollection)
+                .then(response => response.json())
+                .then(response => {
                     const data = response.documents;
-                    console.log('response',response)
-                    $("#summarized-explore").text(response.summary);
-                    // If the table is already initialized, destroy it before re-initializing
+                    console.log('response', response)
+                    document.getElementById('summarized-explore').innerText = response.summary;
+
                     if (exploreTableInitialized) {
                         exploreTable.clear().destroy();
-                        $('#exploreTable tbody').empty(); // Clear existing data
+                        document.getElementById('exploreTable').getElementsByTagName('tbody')[0].innerHTML = '';
                     }
 
-                    // Initialize DataTable
                     window.exploreTable = $('#exploreTable').DataTable({
                         data: data,
                         columns: [
                             { data: "source", searchable: true },
                             { data: "text", searchable: true },
-                            // Add your button column here
-                            { 
-                                data: null, 
-                                className: "center", 
-                                defaultContent: '<button type="button" class="edit-btn">edit</button>' 
+                            {
+                                data: null,
+                                className: "center",
+                                defaultContent: '<button type="button" class="edit-btn">edit</button>'
                             }
                         ],
-                        // Optional: Enable features explicitly
                         searching: true,
                         paging: true,
                         ordering: true,
                     });
 
                     exploreTableInitialized = true;
-                    $('#overlay').css('visibility', 'hidden');
-                },
-                error: function(error){
+                    document.getElementById('overlay').style.visibility = 'hidden';
+                })
+                .catch(error => {
                     console.log("Error: ", error);
-                }
-            });
+                });
         });
+
 
         
         document.getElementById('ingestButton').addEventListener('click', function () {
