@@ -50,7 +50,7 @@ def get_collection_names():
 def generate_response(prompt, conversation_history):
     """Generate an AI response based on the prompt, conversation history, and file content."""
     formatted_history = "\n".join(conversation_history)
-    full_prompt = f"<SYS>You are a helpful AI assistant that answers the [user input] using the [knowledgebase].</SYS>\nConversation history:\n{formatted_history}\n\nHuman: {prompt}\nAI:"
+    full_prompt = f"\nConversation history:\n{formatted_history}\n\nHuman: {prompt}\nAI:"
     print(full_prompt)
     url = 'http://localhost:11434/v1/completions'
     headers = {'Content-Type': 'application/json'}
@@ -211,11 +211,9 @@ def chat():
     {user_input}
     [/user input]
 
-    [knowledgebase]
-    N/A
-    [/knowledgebase]
-
-    RESPOND TO THE [user input] USING THE [knowledgebase]! IMPORTANT!: DO NOT INCLUDE [user input] IN YOUR RESPONSE.
+    [RESPONSE FORMAT]
+        - RESPOND IN PLAINTEXT (EMOJIS ARE ALLOWED). IMPORTANT!
+        - RESPOND TO THE [user input].
     """, conversation_history)
 
         conversation_history.append(f"AI: {ai_response}")
@@ -237,22 +235,32 @@ def chat():
         print(str(docs))
         print("---------------\n")
         ai_response = generate_response(f"""
-    [user input]
-    {user_input}
-    [/user input]
-
-    [knowledgebase]
+                                        
+    [system]
+You are a knowledgeable assistant specialized in providing concise and accurate information. 
+Your responses should be based solely on the context provided and should not include any personal opinions or knowledge outside of the given context. 
+    [/system]
+                                        
+    [context]
     {str(docs)}
-    [/knowledgebase]
+    [/context]
 
-    RESPOND TO THE [user input] USING THE [knowledgebase]! IMPORTANT!: DO NOT INCLUDE [user input] IN YOUR RESPONSE.
+    USE THE [context] TO RESPOND TO THE `{user_input}`.
+
+    [RESPONSE FORMAT]
+        - RESPOND IN PLAINTEXT (EMOJIS ARE ALLOWED). IMPORTANT!
+        - USE THE CONTEXT TO RESPOND TO THE [user input].
+        - THINK CRITICALLY AND STEP BY STEP. ONLY USE THE CONTEXT TO RESPOND.
+        - DO NOT INCLUDE YOUR THOUGHT PROCESS IN YOUR RESPONSE. MAKE SURE YOUR RESPONSE IS COHERENT.
+        - THINK CRITICALLY AND STEP BY STEP. ONLY USE THE CONTEXT TO RESPOND.
+    [/RESPONSE FORMAT]
     """, conversation_history)
 
         conversation_history.append(f"AI: {ai_response}")
 
         session['conversation_history'] = conversation_history
 
-        return jsonify({'response': ai_response, 'full_history': conversation_history})
+        return jsonify({'response': ai_response, 'full_history': conversation_history, 'chunks': [doc.page_content for doc in docs]})
 @app.route('/clear_chat', methods=['POST'])
 def clear_chat():
     session['conversation_history'] = []
