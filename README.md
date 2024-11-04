@@ -13,12 +13,15 @@ Build Collections of notes that you can chat with, all powered by MongoDB Atlas 
 
 ## Features
 
-- Upload and display text files
+- Chunk Management (View/Edit/Delete)
+- Chat Chunk Control (How many chunks to use)
+- Ingest Chunk Size Control (How big should the chunks be @ ingest)
+- Upload and display files
+- Multiple File Formats Supported (PDF, .txt, .md, .html, etc)
 - Chat with an AI about the uploaded content
-- Privacy-focused: all processing happens locally
+- Privacy-focused: all processing happens locally - NOTHING LEAVES YOUR DEVICE!
 - Ability to upload new files mid-conversation
 - Clear chat history or all data as needed
-- Multiple File Formats Supported (PDF, .txt, .md, .html, etc)
 
 ## Prerequisites
 
