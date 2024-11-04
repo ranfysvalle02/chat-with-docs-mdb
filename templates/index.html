@@ -367,27 +367,58 @@
             }
         });
 
-        document.getElementById('sendButton').addEventListener('click', function () {
+        document.getElementById('sendButton').addEventListener('click', function() {
             const userInput = document.getElementById('userInputField').value;
             $('#overlay').css('visibility', 'visible');
+
             fetch('/chat', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ message: userInput, collection: document.getElementById('collectionSelect-2').value, chunk_count: parseInt(document.getElementById('chunkCountInput').value,10) }),
+                body: JSON.stringify({
+                    message: userInput,
+                    collection: document.getElementById('collectionSelect-2').value,
+                    chunk_count: parseInt(document.getElementById('chunkCountInput').value, 10)
+                })
             }).then(response => response.json())
                 .then(data => {
-                    if(data.error) {
+                    if (data.error) {
                         alert(data.error);
                     } else {
-                        document.getElementById('chatHistory').innerHTML += 
-                        `<p>Human: ${userInput}</p><p>AI: ${data.response}</p>`;
+                        // Create a new 'Show/Hide Chunks' button
+                        const chunkButton = document.createElement("button");
+                        chunkButton.innerHTML = "Show Chunks";
+                        chunkButton.onclick = function () {
+                            const chunkDiv = document.getElementById("chunk-data");
+                            if (chunkDiv.style.display === "none") {
+                                chunkDiv.style.display = "block";
+                                chunkButton.innerHTML = "Hide Chunks";
+                            } else {
+                                chunkDiv.style.display = "none";
+                                chunkButton.innerHTML = "Show Chunks";
+                            }
+                        };
+
+                        // Encapsulate the expandable-code in a separate div
+                        const chunkDataElement = document.createElement("div");
+                        chunkDataElement.setAttribute("id", "chunk-data");
+                        chunkDataElement.style.display = "none";
+                        chunkDataElement.innerHTML = `<code class='expandable-code'>${JSON.stringify(data.chunks, null, 2)}</code>`;
+
+                        // Append the elements to the chat history
+                        document.getElementById('chatHistory').innerHTML +=
+                            `<p>Human: ${userInput}</p>
+                            <p>AI: ${data.response}<hr />Chunks Used: ${data.chunks.length}</p>`;
+                        document.getElementById('chatHistory').appendChild(chunkButton);
+                        document.getElementById('chatHistory').appendChild(chunkDataElement);
+
                         document.getElementById('userInputField').value = '';
                         $('#overlay').css('visibility', 'hidden');
                     }
                 });
         });
+
         // Add an event listener to handle the button click
         document.getElementById('clearSessionButton').addEventListener('click', function () {
             fetch('/clear_all', { 
