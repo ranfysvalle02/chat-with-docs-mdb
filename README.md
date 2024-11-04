@@ -18,7 +18,7 @@ Build Collections of notes that you can chat with, all powered by MongoDB Atlas 
 - Privacy-focused: all processing happens locally
 - Ability to upload new files mid-conversation
 - Clear chat history or all data as needed
-- Export chat history
+- Multiple File Formats Supported (PDF, .txt, .md, .html, etc)
 
 ## Prerequisites
 
