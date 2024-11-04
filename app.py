@@ -208,7 +208,10 @@ def update_chunk():
     collection = db[collection_name]
 
     if action == 'save':
-        collection.update_many({'source': source, 'text': og_text}, {'$set': {'text': new_text}})
+        # get new embeddings
+        new_embedding = embeddings.embed_documents([new_text])
+        
+        collection.update_many({'source': source, 'text': og_text}, {'$set': {'text': new_text, 'embedding': new_embedding}})
 
     elif action == 'delete':
         collection.delete_many({'source': source, 'text': og_text})
