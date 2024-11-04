@@ -2,7 +2,6 @@ import time
 from flask import Flask, request, render_template, jsonify, session
 import requests
 import os
-from PyPDF2 import PdfReader  # Correct import for PDF reading
 from pymongo import MongoClient
 from pymongo.operations import SearchIndexModel
 from pymongo.errors import ServerSelectionTimeoutError
@@ -16,11 +15,9 @@ import concurrent.futures
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', os.urandom(24))  # Use environment variable for secret key if available
-
+CHUNK_SIZE=2000
 CHUNKS_PER_QUERY = 5
-MIN_SCORE = 0.00
 DATABASE_NAME = 'mydatabase'
-
 
 client = MongoClient('mongodb://localhost/?directConnection=true')
 db = client[DATABASE_NAME]
@@ -91,10 +88,12 @@ def ingest():
     text = str(request.json.get('text'))    
     collection_name = str(request.json.get('collection_name'))
     source = str(request.json.get('source'))
-    
+    chunk_size = request.json.get('chunk_size')
+    if chunk_size is None:
+        chunk_size = CHUNK_SIZE
     # Initialize the RecursiveCharacterTextSplitter
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=2000,  # Maximum size of each chunk
+        chunk_size=chunk_size,  # Maximum size of each chunk
         chunk_overlap=20,  # Number of overlapping characters between chunks
         length_function=len,  # Function to determine the length of each chunk
         separators=["\n\n", "\n", " ", ""]  # Characters to use for splitting
@@ -149,7 +148,7 @@ def create_collection():
     print(result + " is ready for querying.")
     return jsonify({'status': 'success', 'collections': get_collection_names()})
 
-@app.route('/api/collections', methods=['GET'])
+@app.route('/list_collections', methods=['GET'])
 def get_collections():
     collections = get_collection_names()
     return jsonify({'collections': collections})
@@ -200,36 +199,60 @@ def chat():
     data = request.json
     user_input = data.get('message', '')
     selected_collection = data.get('collection', '')
-    conversation_history = session.get('conversation_history', [])
-    conversation_history.append(f"Human: {user_input}")
-    # initialize vector store
-    vectorStore = MongoDBAtlasVectorSearch(
-        db[str(selected_collection)], embeddings, index_name="vector_index"
-    )
-    query = user_input
-    # perform a search between the embedding of the query and the embeddings of the documents
-    print("\nQuery Response:")
-    print("---------------")
-    docs = vectorStore.similarity_search(query, K=CHUNKS_PER_QUERY, min_score=MIN_SCORE)
-    print(docs)
-    print("---------------\n")
-    ai_response = generate_response(f"""
-[user input]
-{user_input}
-[/user input]
+    chunk_count = int(str(data.get('chunk_count', CHUNKS_PER_QUERY)))
+    print("CHUNK_COUNT"+str(chunk_count))
+    if selected_collection not in db.list_collection_names():
+        conversation_history = session.get('conversation_history', [])
+        conversation_history.append(f"Human: {user_input}")
+        #no vector store
+        query = user_input
+        ai_response = generate_response(f"""
+    [user input]
+    {user_input}
+    [/user input]
 
-[knowledgebase]
-{str(docs)}
-[/knowledgebase]
+    [knowledgebase]
+    N/A
+    [/knowledgebase]
 
-RESPOND TO THE [user input] USING THE [knowledgebase]! IMPORTANT!: DO NOT INCLUDE [user input] IN YOUR RESPONSE.
-""", conversation_history)
+    RESPOND TO THE [user input] USING THE [knowledgebase]! IMPORTANT!: DO NOT INCLUDE [user input] IN YOUR RESPONSE.
+    """, conversation_history)
 
-    conversation_history.append(f"AI: {ai_response}")
+        conversation_history.append(f"AI: {ai_response}")
+        session['conversation_history'] = conversation_history
+        return jsonify({'response': ai_response, 'full_history': conversation_history})
+    else:
+            
+        conversation_history = session.get('conversation_history', [])
+        conversation_history.append(f"Human: {user_input}")
+        # initialize vector store
+        vectorStore = MongoDBAtlasVectorSearch(
+            db[str(selected_collection)], embeddings, index_name="vector_index"
+        )
+        query = user_input
+        # perform a search between the embedding of the query and the embeddings of the documents
+        print("\nQuery Response:")
+        print("---------------")
+        docs = vectorStore.similarity_search(query, k=chunk_count)
+        print(str(docs))
+        print("---------------\n")
+        ai_response = generate_response(f"""
+    [user input]
+    {user_input}
+    [/user input]
 
-    session['conversation_history'] = conversation_history
+    [knowledgebase]
+    {str(docs)}
+    [/knowledgebase]
 
-    return jsonify({'response': ai_response, 'full_history': conversation_history})
+    RESPOND TO THE [user input] USING THE [knowledgebase]! IMPORTANT!: DO NOT INCLUDE [user input] IN YOUR RESPONSE.
+    """, conversation_history)
+
+        conversation_history.append(f"AI: {ai_response}")
+
+        session['conversation_history'] = conversation_history
+
+        return jsonify({'response': ai_response, 'full_history': conversation_history})
 @app.route('/clear_chat', methods=['POST'])
 def clear_chat():
     session['conversation_history'] = []
