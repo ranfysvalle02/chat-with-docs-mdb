@@ -1,295 +1,455 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const uploadForm = document.getElementById('uploadForm');
-    const fileInput = document.getElementById('fileInput');
-    const uploadButton = document.getElementById('uploadButton');
-    const fileContent = document.getElementById('fileContent');
-    const chatForm = document.getElementById('chatForm');
-    const userInput = document.getElementById('userInput');
-    const chatHistory = document.getElementById('chatHistory');
-    const exportChatButton = document.getElementById('exportChat');
-    const clearChatButton = document.getElementById('clearChat');
-    const clearAllButton = document.getElementById('clearAll');
-    const dropZone = document.getElementById('dropZone');
-    const spinner = document.getElementById('spinner');
+var filename = '';
+    
+function changeTab(tabId) {
+    const tabs = document.getElementsByClassName('tab');
+    const tabHeaders = document.getElementsByClassName('tab-header');
 
-    const allowedFileTypes = ['.txt', '.md', '.py', '.js', '.html', '.css', '.json', '.pdf'];
-
-    // Create loading overlay
-    const loadingOverlay = document.createElement('div');
-    loadingOverlay.className = 'loading-overlay';
-    loadingOverlay.innerHTML = '<div class="loader"></div>';
-    document.body.appendChild(loadingOverlay);
-
-    // Function to show/hide loading overlay
-    function setLoading(isLoading) {
-        loadingOverlay.style.display = isLoading ? 'flex' : 'none';
+    for (let i = 0; i < tabs.length; i++) {
+        tabs[i].style.display = 'none';
+        tabHeaders[i].classList.remove('active');
     }
 
-    // Function to show/hide spinner
-    function setSpinner(isLoading) {
-        spinner.style.display = isLoading ? 'block' : 'none';
+    document.getElementById(tabId).style.display = 'block';
+    document.querySelector(`[onclick="changeTab('${tabId}')"]`).classList.add('active');
+
+    if(tabId === 'Upload' || tabId === 'Chat' || tabId === 'Explore') {
+        setTimeout(fetchCollections, 100);
     }
+}
 
-    // Load chat history from local storage
-    loadChatHistory();
-
-    // Load file content from local storage
-    loadFileContent();
-
-    fileInput.addEventListener('change', handleFileSelect);
-
-    // Drag and drop functionality
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('dragover');
-    });
-
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('dragover');
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        const files = e.dataTransfer.files;
-        if (files.length) {
-            handleFileSelect({ target: { files: files } });
-        }
-    });
-
-    function handleFileSelect(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
-            if (allowedFileTypes.includes(fileExtension)) {
-                uploadButton.textContent = 'Upload ' + file.name;
-                uploadButton.disabled = false;
-                fileInput.files = e.target.files;  // Update the file input
-            } else {
-                uploadButton.textContent = 'Invalid file type';
-                uploadButton.disabled = true;
-                alert('Please select a valid file type: ' + allowedFileTypes.join(', '));
+function fetchCollections() {
+    fetch('/list_collections')
+        .then(response => {
+            if (!response.ok) {
+                return Promise.reject(response.statusText);
             }
-        } else {
-            uploadButton.textContent = 'Upload';
-            uploadButton.disabled = false;
-        }
-    }
-
-    uploadForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(uploadForm);
-
-        // Check if there's existing chat history
-        if (chatHistory.innerHTML.trim() !== '') {
-            const userChoice = await showUploadConfirmation();
-            if (userChoice === 'cancel') {
-                return;
-            }
-            formData.append('action', userChoice);
-        } else {
-            formData.append('action', 'upload');
-        }
-
-        try {
-            setLoading(true);
-            const response = await fetch('/upload', {
-                method: 'POST',
-                body: formData
+            return response.json();
+        })
+        .then(data => {
+            const collectionSelect1 = document.getElementById('collectionSelect-1');
+            collectionSelect1.innerHTML = '';
+            data.collections.forEach(collection => {
+                const option = document.createElement('option');
+                option.value = collection;
+                option.textContent = collection;
+                collectionSelect1.appendChild(option);
             });
-            const data = await response.json();
+            const collectionSelect2 = document.getElementById('collectionSelect-2');
+            collectionSelect2.innerHTML = '';
+            data.collections.forEach(collection => {
+                const option = document.createElement('option');
+                option.value = collection;
+                option.textContent = collection;
+                collectionSelect2.appendChild(option);
+            });
+            const collectionSelect3 = document.getElementById('collectionSelect-3');
+            collectionSelect3.innerHTML = '';
+            data.collections.forEach(collection => {
+                const option = document.createElement('option');
+                option.value = collection;
+                option.textContent = collection;
+                collectionSelect3.appendChild(option);
+            });
+        })
+        .catch(error => console.log(`Fetch Error: ${error}`));
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById('createCollectionButton').addEventListener('click', function () {
+        $('#overlay').css('visibility', 'visible');
+        const newCollectionName = document.getElementById('newCollectionName').value;
+        fetch('/create_collection', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: newCollectionName }),
+        }).then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    alert('Collection created successfully!');
+                    $("#newCollectionName").val('');
+                    fetchCollections();
+                }
+                $('#overlay').css('visibility', 'hidden');
+            });
+    });
+
+    document.getElementById('deleteCollectionButton').addEventListener('click', function () {
+        const collectionName = document.getElementById('collectionSelect-1').value;
+        fetch('/delete_collection', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: collectionName }),
+        }).then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    alert('Collection deleted successfully!');
+                    fetchCollections();
+                }
+            });
+    });
+
+    fetch('/status').then((response) => {
+        if (response.status === 200) {
+            return response.json();
+        } else {
+            throw new Error(response.statusText);
+        }
+    }).then((data) => {
+        document.querySelector('#database_status').innerText = data.database_status;
+    }).catch((error) => {
+        console.error('Error:', error);
+        document.querySelector('#database_status').innerText = 'Unhealthy';
+    });
+});
+
+function changeSubTab(subTabId) {
+    const subTabs = document.getElementsByClassName('sub-tab');
+    const subTabHeaders = document.getElementsByClassName('sub-tab-header');
+
+    for (let i = 0; i < subTabs.length; i++) {
+        subTabs[i].style.display = 'none';
+        subTabHeaders[i].classList.remove('active');
+    }
+
+    document.getElementById(subTabId).style.display = 'block';
+    document.querySelector(`[onclick="changeSubTab('${subTabId}')"]`).classList.add('active');
+}
+
+function validateInput(input) {
+    var cleanedValue = input.value.replace(/[^0-9]/g, '');
+    var intValue = parseInt(cleanedValue,10);
+    input.value = isNaN(intValue) ? "" : intValue;
+}
+
+document.getElementById('fileInput').addEventListener('change', function(e) {
+    var file = e.target.files[0];
+    if (!file) {
+        return;
+    }
+    filename = file.name;
+
+    if (file.type.startsWith('application/pdf')) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            const typedarray = new Uint8Array(this.result);
+            pdfjsLib.getDocument(typedarray).promise.then((pdfDoc) => {
+                const numPages = pdfDoc.numPages;
+                let allText = [];
+
+                const getPageText = (pageNum) => {
+                    return pdfDoc.getPage(pageNum).then((page) => {
+                        return page.getTextContent().then((textContent) => {
+                            const pageText = textContent.items.map(item => item.str).join(' ');
+                            allText.push(pageText);
+                        });
+                    });
+                };
+
+                const pagePromises = [];
+                for (let i = 1; i <= numPages; i++) {
+                    pagePromises.push(getPageText(i));
+                }
+
+                Promise.all(pagePromises).then(() => {
+                    const fileContent = allText.join('\n');
+                    console.log('File content:', fileContent);
+                    document.getElementById('fileContent').textContent = fileContent;
+
+                    document.getElementById('upload').style.display = 'none';
+                    document.getElementById('resetButton').style.display = 'block';
+                }).catch(error => {
+                    console.error("Error processing pages:", error);
+                });
+            }).catch(error => {
+                console.error("Error getting document:", error);
+            });
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var contents = e.target.result;
+            document.getElementById('fileContent').textContent = contents;
+            document.getElementById('upload').style.display = 'none';
+            document.getElementById('resetButton').style.display = 'block';
+        };
+        reader.readAsText(file);
+    }
+}, false);
+
+document.getElementById('resetButton').addEventListener('click', function(e) {
+    document.getElementById('upload').style.display = 'block';
+    document.getElementById('fileContent').textContent = '';
+    this.style.display = 'none';
+});
+
+document.getElementById('newCollectionButton').addEventListener('click', function() {
+    var x = document.getElementById("newCollection");
+    if (x.style.display === "none") {
+        x.style.display = "block";
+    } else {
+        x.style.display = "none";
+    }
+});
+
+document.getElementById('resetNewCollectionButton').addEventListener('click', function() {
+    document.getElementById('newCollectionName').value = '';
+    var x = document.getElementById("newCollection");
+    if (x.style.display === "none") {
+        x.style.display = "block";
+    } else {
+        x.style.display = "none";
+    }
+});
+
+document.getElementById('sendButton').addEventListener('click', function() {
+    const userInput = document.getElementById('userInputField').value;
+    $('#overlay').css('visibility', 'visible');
+
+    fetch('/chat', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            message: userInput,
+            collection: document.getElementById('collectionSelect-2').value,
+            chunk_count: parseInt(document.getElementById('chunkCountInput').value, 10)
+        })
+    }).then(response => response.json())
+        .then(data => {
             if (data.error) {
-                alert(`Error: ${data.error}`);
-                fileContent.textContent = '';
+                alert(data.error);
             } else {
-                fileContent.textContent = data.content;
-                localStorage.setItem('fileContent', data.content); // Store file content in localStorage
-                if (data.chatHistory) {
-                    updateChatHistory(data.chatHistory);
+                const chunkButton = document.createElement("button");
+                chunkButton.innerHTML = "Show Chunks";
+                chunkButton.onclick = function () {
+                    const chunkDiv = document.getElementById("chunk-data");
+                    if (chunkDiv.style.display === "none") {
+                        chunkDiv.style.display = "block";
+                        chunkButton.innerHTML = "Hide Chunks";
+                    } else {
+                        chunkDiv.style.display = "none";
+                        chunkButton.innerHTML = "Show Chunks";
+                    }
+                };
+
+                const chunkDataElement = document.createElement("div");
+                chunkDataElement.setAttribute("id", "chunk-data");
+                if (data.chunks) {
+                    chunkDataElement.style.display = "none";
+                    chunkDataElement.innerHTML = `<code class='expandable-code'>${JSON.stringify(data.chunks, null, 2)}</code>`;
+
+                    document.getElementById('chatHistory').innerHTML +=
+                        `<p>Human: ${userInput}</p><p>AI: ${data.response}<hr />Chunks Used: ${data.chunks.length}</p>`;
+                    document.getElementById('chatHistory').appendChild(chunkButton);
+                    document.getElementById('chatHistory').appendChild(chunkDataElement);
+
+                    document.getElementById('userInputField').value = '';
+                    $('#overlay').css('visibility', 'hidden');
+                }else{
+                    chunkDataElement.style.display = "none";
+                    chunkDataElement.innerHTML = `<code class='expandable-code'>${JSON.stringify([], null, 2)}</code>`;
+
+                    document.getElementById('chatHistory').innerHTML +=
+                        `<p>Human: ${userInput}</p><p>AI: ${data.response}<hr />Chunks Used: n/a</p>`;
+                    document.getElementById('chatHistory').appendChild(chunkButton);
+                    document.getElementById('chatHistory').appendChild(chunkDataElement);
+
+                    document.getElementById('userInputField').value = '';
+                    $('#overlay').css('visibility', 'hidden');
                 }
             }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred while uploading the file.');
-            fileContent.textContent = '';
-        } finally {
-            setLoading(false);
-        }
-    });
-
-    chatForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const message = userInput.value.trim();
-        if (!message) return;
-
-        appendMessage('You', message);
-        userInput.value = '';
-
-        try {
-            setSpinner(true);
-            const response = await fetch('/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    message: message
-                }),
-            });
-            const data = await response.json();
-            appendMessage('AI', data.response);
-            updateChatHistory(data.full_history);
-        } catch (error) {
-            console.error('Error:', error);
-            appendMessage('System', 'An error occurred while processing your message.');
-        } finally {
-            setSpinner(false);
-        }
-    });
-
-    function showUploadConfirmation() {
-        return new Promise((resolve) => {
-            const confirmationDialog = document.createElement('div');
-            confirmationDialog.innerHTML = `
-                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;">
-                    <div style="background: white; padding: 20px; border-radius: 5px; text-align: center;">
-                        <p>You have an existing chat history. What would you like to do?</p>
-                        <button id="clearChatBtn">Clear chat and upload</button>
-                        <button id="keepChatBtn">Keep chat and upload</button>
-                        <button id="cancelUploadBtn">Cancel upload</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(confirmationDialog);
-
-            document.getElementById('clearChatBtn').onclick = () => {
-                document.body.removeChild(confirmationDialog);
-                resolve('clear');
-            };
-            document.getElementById('keepChatBtn').onclick = () => {
-                document.body.removeChild(confirmationDialog);
-                resolve('keep');
-            };
-            document.getElementById('cancelUploadBtn').onclick = () => {
-                document.body.removeChild(confirmationDialog);
-                resolve('cancel');
-            };
         });
-    }
+});
 
-    function appendMessage(sender, message) {
-        const messageElement = document.createElement('div');
-        messageElement.className = `message ${sender.toLowerCase()}-message`;
-        messageElement.innerHTML = `<strong>${sender}:</strong> ${message}`;
-        chatHistory.appendChild(messageElement);
-        chatHistory.scrollTop = chatHistory.scrollHeight;
-    }
+document.getElementById('clearSessionButton').addEventListener('click', function () {
+    fetch('/clear_all', { 
+        method: 'POST' 
+    }).then(response => response.json())
+    .then(data => {
+        if(data.status == 'success') {
+            alert(data.message);
+            window.location.reload();
+        }
+    });
+});
 
-    function updateChatHistory(fullHistory) {
-        chatHistory.innerHTML = ''; // Clear existing chat history
-        fullHistory.forEach(message => {
-            if (message.startsWith('Human: ')) {
-                appendMessage('You', message.substring(7));
-            } else if (message.startsWith('AI: ')) {
-                appendMessage('AI', message.substring(4));
-            } else if (message.startsWith('System: ')) {
-                appendMessage('System', message.substring(8));
+let isSessionVisible = false;
+
+document.getElementById('toggleSessionButton').addEventListener('click', function () {
+    if (!isSessionVisible) {
+        fetch('/show_session', { 
+            method: 'GET' 
+        }).then(response => response.json())
+        .then(data => {
+            document.getElementById('sessionData').innerHTML = JSON.stringify(data, null, 2);
+            document.getElementById('toggleSessionButton').innerText = 'Hide Session';
+            isSessionVisible = true;
+        });
+    } else {
+        document.getElementById('sessionData').innerHTML = '';
+        document.getElementById('toggleSessionButton').innerText = 'Show Session';
+        isSessionVisible = false;
+    }
+});
+
+let exploreTableInitialized = false;
+let exploreTable;
+document.getElementById('loadButton').addEventListener('click', function () {
+    const selectedCollection = document.getElementById('collectionSelect-3').value;
+    document.getElementById('overlay').style.visibility = 'visible';
+
+    fetch('/explore?collection=' + selectedCollection)
+        .then(response => response.json())
+        .then(response => {
+            const data = response.documents;
+            console.log('response', response)
+            document.getElementById('summarized-explore').innerText = response.summary;
+
+            if (exploreTableInitialized) {
+                exploreTable.clear().destroy();
+                document.getElementById('exploreTable').getElementsByTagName('tbody')[0].innerHTML = '';
+            }
+
+            window.exploreTable = $('#exploreTable').DataTable({
+                data: data,
+                columns: [
+                    { data: "source", searchable: true },
+                    { data: "text", searchable: true },
+                    {
+                        data: null,
+                        className: "center",
+                        defaultContent: '<button type="button" class="edit-btn">edit</button>'
+                    }
+                ],
+                searching: true,
+                paging: true,
+                ordering: true,
+            });
+
+            exploreTableInitialized = true;
+            document.getElementById('overlay').style.visibility = 'hidden';
+        })
+        .catch(error => {
+            console.log("Error: ", error);
+        });
+});
+
+document.getElementById('ingestButton').addEventListener('click', function () {
+    const fileContent = document.getElementById('fileContent').textContent;
+    const collectionName = document.getElementById('collectionSelect-1').value;
+    const chunkSize = document.getElementById('chunkSizeInput').value;
+    const data = {
+        text: fileContent,
+        collection_name: collectionName,  
+        source: filename,
+        chunk_size: parseInt(chunkSize)
+    };
+    $('#overlay').css('visibility', 'visible');
+    fetch('/ingest', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    }).then(response => response.json())
+        .then(data => {
+            if(data.error) {
+                alert(data.error);
+            } else {
+                alert('Data ingested successfully');
+                window.location.reload();
             }
         });
-        saveChatHistory();
-    }
+});
 
-    function saveChatHistory() {
-        localStorage.setItem('chatHistory', chatHistory.innerHTML);
-    }
+window.addEventListener('DOMContentLoaded', (event) => {
+    document.getElementById('chunkSizeInput').addEventListener("change", validateInput);
+    document.getElementById('chunkCountInput').addEventListener("change", validateInput);
+});
 
-    function loadChatHistory() {
-        const savedHistory = localStorage.getItem('chatHistory');
-        if (savedHistory) {
-            chatHistory.innerHTML = savedHistory;
-        }
-    }
+$('#exploreTable tbody').on('click', 'button.edit-btn', function() {
+    var data = window.exploreTable.row($(this).parents('tr')).data();
+    console.log('rowData',data);
+    document.getElementById('ogTextInput').value = data.text;
 
-    function loadFileContent() {
-        const savedFileContent = localStorage.getItem('fileContent');
-        if (savedFileContent) {
-            fileContent.textContent = savedFileContent;
-        }
-    }
+    document.getElementById('editForm').reset();
 
-    async function clearChat() {
-        try {
-            setLoading(true);
-            const response = await fetch('/clear_chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({}),
-            });
-            const data = await response.json();
-            if (data.status !== 'success') {
-                throw new Error('Failed to clear chat history');
-            }
-            chatHistory.innerHTML = '';
-            localStorage.removeItem('chatHistory');
-        } catch (error) {
-            console.error('Error clearing chat:', error);
-            alert('An error occurred while clearing the chat. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    }
+    document.getElementById('sourceInput').value = data.source;
+    document.getElementById('textInput').value = data.text;
 
-    async function clearAll() {
-        try {
-            setLoading(true);
-            const response = await fetch('/clear_all', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({}),
-            });
-            const data = await response.json();
-            if (data.status !== 'success') {
-                throw new Error('Failed to clear all data');
-            }
-            chatHistory.innerHTML = '';
-            fileContent.textContent = '';
-            localStorage.clear();
-            // Force a hard reload of the page to clear any cached data
-            window.location.reload(true);
-        } catch (error) {
-            console.error('Error clearing all data:', error);
-            alert('An error occurred while clearing all data. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    }
+    var modal = document.getElementById("myModal");
+    modal.style.display = "block";
 
-    exportChatButton.addEventListener('click', () => {
-        const chatContent = chatHistory.innerText;
-        const blob = new Blob([chatContent], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'chat_export.txt';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+    document.getElementsByClassName("close")[0].onclick = function() {
+        modal.style.display = "none";
+    }
+});
+
+function validateInput(event) {
+    var numberMatch = event.target.value.match(/^-?[0-9]+/);
+    var firstNumber = numberMatch ? parseInt(numberMatch[0]) : 0;
+
+    event.target.value = firstNumber;
+}
+
+document.querySelector('.save-button').addEventListener('click', function () {
+    const source = document.getElementById("sourceInput").value;
+    const text = document.getElementById("textInput").value;
+    const og_text = document.getElementById("ogTextInput").value;
+
+    fetch('/update_chunk', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            action: 'save',
+            collection: document.getElementById('collectionSelect-3').value,
+            source: source,
+            og_text: og_text,
+            new_text: text
+        }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert('Chunk updated successfully');
+        window.location.reload();
     });
+});
 
-    clearChatButton.addEventListener('click', async () => {
-        if (confirm('Are you sure you want to clear the chat history? This action cannot be undone.')) {
-            await clearChat();
-        }
-    });
+document.querySelector('.delete-button').addEventListener('click', function () {
+    const source = document.getElementById("sourceInput").value;
+    const og_text = document.getElementById("ogTextInput").value;
 
-    clearAllButton.addEventListener('click', async () => {
-        if (confirm('Are you sure you want to clear all data? This will remove the chat history and uploaded file content. This action cannot be undone.')) {
-            await clearAll();
-        }
+    fetch('/update_chunk', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            action: 'delete',
+            collection: document.getElementById('collectionSelect-3').value,
+            source: source,
+            og_text: og_text
+        }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert('Chunk deleted successfully');
+        window.location.reload();
     });
+});
+
+document.querySelector('.cancel-button').addEventListener('click', function () {
+    document.getElementById("myModal").style.display = "none";
 });
