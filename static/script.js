@@ -173,7 +173,22 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
             });
         };
         reader.readAsArrayBuffer(file);
-    } else {
+    }else if(file.type.startsWith('application/vnd.openxmlformats-officedocument.wordprocessingml.document')){
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var arrayBuffer = reader.result;
+
+            mammoth.extractRawText({arrayBuffer: arrayBuffer})
+                .then(function(result) {
+                    var text = result.value; // The raw text
+                    document.getElementById('fileContent').innerText = text;
+                    document.getElementById('upload').style.display = 'none';
+                    document.getElementById('resetButton').style.display = 'block';
+                })
+                .done();
+        }
+        reader.readAsArrayBuffer(file);
+    }else {
         var reader = new FileReader();
         reader.onload = function(e) {
             var contents = e.target.result;
